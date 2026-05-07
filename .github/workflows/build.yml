@@ -70,15 +70,17 @@ jobs:
   macos:
     name: macos • ${{ matrix.tfm }}
     runs-on: macos-15
-    # iOS allowed to fail: the .NET 10 iOS SDK pins to a specific Xcode
-    # point release (26.4 at time of writing) and GH-hosted macos-15
-    # currently ships Xcode 26.3. Re-evaluate when GH images update.
+    # iOS / Mac Catalyst allowed to fail: the .NET 10 Apple SDKs pin to
+    # a specific Xcode point release (26.4 at time of writing) and
+    # GH-hosted macos-15 currently ships Xcode 26.3. Re-evaluate when GH
+    # images update.
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         tfm:
           - net10.0-ios
+          - net10.0-maccatalyst
     steps:
       - uses: actions/checkout@v4
 
@@ -105,3 +107,44 @@ jobs:
 
       - name: Build (unsigned)
         run: dotnet build ElysiumUnoCanary/ElysiumUnoCanary.csproj -c Release -f ${{ matrix.tfm }}
+
+  windows:
+    name: windows • ${{ matrix.tfm }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tfm:
+          - net10.0-windows10.0.19041
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/cache@v4
+        with:
+          path: ~\.nuget\packages
+          key: nuget-${{ runner.os }}-${{ matrix.tfm }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/global.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-${{ matrix.tfm }}-
+            nuget-${{ runner.os }}-
+
+      - name: Restore workloads
+        run: dotnet workload restore ElysiumUnoCanary\ElysiumUnoCanary.csproj
+
+      - name: Build
+        run: dotnet build ElysiumUnoCanary\ElysiumUnoCanary.csproj -c Release -f ${{ matrix.tfm }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.tfm }}
+          path: |
+            ElysiumUnoCanary\bin\Release\${{ matrix.tfm }}\**\*.msix
+            ElysiumUnoCanary\bin\Release\${{ matrix.tfm }}\**\*.appx
+            ElysiumUnoCanary\bin\Release\${{ matrix.tfm }}\**\*.dll
+            ElysiumUnoCanary\bin\Release\${{ matrix.tfm }}\**\*.exe
+          if-no-files-found: warn
+          retention-days: 7
