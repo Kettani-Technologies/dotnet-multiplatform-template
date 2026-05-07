@@ -1,0 +1,10 @@
+{
+  "background_color": "#ffffff",
+  "description": "ElysiumUnoCanary",
+  "display": "standalone",
+  "name": "ElysiumUnoCanary",
+  "short_name": "ElysiumUnoCanary",
+  "start_url": "/index.html",
+  "theme_color": "#ffffff",
+  "scope": "/"
+}

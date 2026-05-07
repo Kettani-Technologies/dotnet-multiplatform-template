@@ -1,0 +1,100 @@
+name: build-all-platforms
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  ubuntu:
+    name: ubuntu • ${{ matrix.tfm }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tfm:
+          - net10.0-desktop
+          - net10.0-browserwasm
+          - net10.0-android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - if: matrix.tfm == 'net10.0-android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ matrix.tfm }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/global.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-${{ matrix.tfm }}-
+            nuget-${{ runner.os }}-
+
+      - name: Install workloads
+        run: |
+          if [[ "${{ matrix.tfm }}" == "net10.0-android" ]]; then
+            dotnet workload install android
+          else
+            dotnet workload install wasm-tools wasm-experimental
+          fi
+
+      - name: Build
+        run: dotnet build ElysiumUnoCanary/ElysiumUnoCanary.csproj -c Release -f ${{ matrix.tfm }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.tfm }}
+          path: |
+            ElysiumUnoCanary/bin/Release/${{ matrix.tfm }}/**/*.apk
+            ElysiumUnoCanary/bin/Release/${{ matrix.tfm }}/**/*.aab
+            ElysiumUnoCanary/bin/Release/${{ matrix.tfm }}/**/wwwroot/**
+            ElysiumUnoCanary/bin/Release/${{ matrix.tfm }}/**/AppBundle/**
+            ElysiumUnoCanary/bin/Release/${{ matrix.tfm }}/**/*.dll
+          if-no-files-found: warn
+          retention-days: 7
+
+  macos:
+    name: macos • ${{ matrix.tfm }}
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        tfm:
+          - net10.0-ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ matrix.tfm }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props', '**/global.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-${{ matrix.tfm }}-
+            nuget-${{ runner.os }}-
+
+      - name: Install workloads
+        run: dotnet workload install ios
+
+      - name: Build (unsigned)
+        run: dotnet build ElysiumUnoCanary/ElysiumUnoCanary.csproj -c Release -f ${{ matrix.tfm }}
