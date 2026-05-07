@@ -70,6 +70,10 @@ jobs:
   macos:
     name: macos • ${{ matrix.tfm }}
     runs-on: macos-15
+    # iOS allowed to fail: the .NET 10 iOS SDK pins to a specific Xcode
+    # point release (26.4 at time of writing) and GH-hosted macos-15
+    # currently ships Xcode 26.3. Re-evaluate when GH images update.
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
