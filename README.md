@@ -49,13 +49,19 @@ git push -u origin main
 
 ### Option 2 — Install as a `dotnet new` template
 
+`dotnet new install` doesn't accept git URLs directly, so clone first then
+install from the local path:
+
 ```bash
-dotnet new install https://github.com/Kettani-Technologies/dotnet-multiplatform-template.git
+git clone https://github.com/Kettani-Technologies/dotnet-multiplatform-template /tmp/dmt
+dotnet new install /tmp/dmt
 dotnet new dotnet-multiplatform -n MyApp
+rm -rf /tmp/dmt   # template now registered with the .NET CLI; clone can go
 ```
 
-The second form parameterizes the project name automatically — recommended
-for new projects.
+The template parameterizes the project name automatically: file names,
+directory names, namespaces, and `ApplicationId` all derive from `-n`.
+Recommended for new projects.
 
 ## Local repro on a Linux dev machine
 
