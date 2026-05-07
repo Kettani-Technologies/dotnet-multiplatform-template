@@ -46,13 +46,8 @@ jobs:
             nuget-${{ runner.os }}-${{ matrix.tfm }}-
             nuget-${{ runner.os }}-
 
-      - name: Install workloads
-        run: |
-          if [[ "${{ matrix.tfm }}" == "net10.0-android" ]]; then
-            dotnet workload install android
-          else
-            dotnet workload install wasm-tools wasm-experimental
-          fi
+      - name: Restore workloads
+        run: dotnet workload restore ElysiumUnoCanary/ElysiumUnoCanary.csproj
 
       - name: Build
         run: dotnet build ElysiumUnoCanary/ElysiumUnoCanary.csproj -c Release -f ${{ matrix.tfm }}
@@ -93,8 +88,8 @@ jobs:
             nuget-${{ runner.os }}-${{ matrix.tfm }}-
             nuget-${{ runner.os }}-
 
-      - name: Install workloads
-        run: dotnet workload install ios
+      - name: Restore workloads
+        run: dotnet workload restore ElysiumUnoCanary/ElysiumUnoCanary.csproj
 
       - name: Build (unsigned)
         run: dotnet build ElysiumUnoCanary/ElysiumUnoCanary.csproj -c Release -f ${{ matrix.tfm }}
